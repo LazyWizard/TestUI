@@ -5,13 +5,12 @@ import com.fs.starfarer.api.campaign.listeners.CampaignInputListener;
 import com.fs.starfarer.api.input.InputEventAPI;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
-import org.lwjgl.util.vector.Vector2f;
 
 import java.util.List;
 
 public class TestUIScript implements EveryFrameScript, CampaignInputListener
 {
-    private Button testButton = new TestButton(new Vector2f(0f, 0f), 150f, 40f);
+    private final Button testButton = new TestButton(0f, 0f, 150f, 40f);
 
     @Override
     public boolean isDone()
@@ -56,9 +55,9 @@ public class TestUIScript implements EveryFrameScript, CampaignInputListener
 
     private static class TestButton extends Button
     {
-        private TestButton(Vector2f pos, float sizeX, float sizeY)
+        private TestButton(float x, float y, float sizeX, float sizeY)
         {
-            super(pos, sizeX, sizeY);
+            super(x, y, sizeX, sizeY);
         }
 
         public void advance(float amount)
@@ -69,7 +68,7 @@ public class TestUIScript implements EveryFrameScript, CampaignInputListener
             // This is here for initial debugging/verifying of event consumption
             if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT))
             {
-                position.set(new Vector2f(Mouse.getX(), Mouse.getY()));
+                position.set(Mouse.getX(), Mouse.getY());
             }
         }
 
