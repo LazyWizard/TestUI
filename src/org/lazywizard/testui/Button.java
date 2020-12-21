@@ -3,7 +3,6 @@ package org.lazywizard.testui;
 import com.fs.starfarer.api.Global;
 import com.fs.starfarer.api.graphics.SpriteAPI;
 import com.fs.starfarer.api.input.InputEventAPI;
-import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.util.vector.Vector2f;
@@ -12,16 +11,15 @@ import java.util.List;
 
 import static org.lwjgl.opengl.GL11.*;
 
-public class Button
+public abstract class Button
 {
     public static final String BUTTON_UP = "graphics/ui/buttons/button_up.png";
     public static final String BUTTON_DOWN = "graphics/ui/buttons/button_down.png";
     public static final String BUTTON_OVER = "graphics/ui/buttons/button_over.png";
-    private final SpriteAPI buttonDown, buttonUp, buttonOver;
-    private SpriteAPI activeSprite;
-    private Vector2f position;
-    private float sizeX, sizeY;
-    private boolean isClicked, isMousedOver;
+    protected final SpriteAPI buttonDown, buttonUp, buttonOver;
+    protected final Vector2f position;
+    protected SpriteAPI activeSprite; // This also acts as our state check, which... isn't optimal
+    protected float sizeX, sizeY;
 
     public Button(Vector2f position, float sizeX, float sizeY)
     {
@@ -33,10 +31,12 @@ public class Button
         this.sizeX = sizeX;
         this.sizeY = sizeY;
 
-        isClicked = false;
-        isMousedOver = false;
         activeSprite = buttonUp;
     }
+
+    public abstract void onButtonPressed();
+
+    public abstract void onButtonReleased();
 
     public Vector2f getPosition()
     {
@@ -49,34 +49,36 @@ public class Button
                 toCheck.y >= position.y && toCheck.y <= position.y + sizeY);
     }
 
-    // TODO: add onDown, onUp, onMouseover etc methods
+    // TODO: add right/middle mouse click handling
     public void processInput(List<InputEventAPI> events)
     {
         final Vector2f mousePos = new Vector2f(Mouse.getX(), Mouse.getY());
         final boolean inButton = isInButton(mousePos);
 
-        if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT))
-        {
-            position.set(mousePos);
-        }
-
         for (InputEventAPI event : events)
         {
-            if (event.isConsumed()) continue;
+            // We're only interested in mouse events involving the left mouse button
+            if (event.isConsumed() || !event.isMouseEvent() || event.getEventValue() != 0) continue;
 
+            // Button clicked
             if (event.isMouseDownEvent() && inButton)
             {
                 activeSprite = buttonDown;
+                onButtonPressed();
                 event.consume();
             }
+            // Button released
             else if (event.isMouseUpEvent() && activeSprite == buttonDown)
             {
                 activeSprite = buttonUp;
+                onButtonReleased();
                 event.consume();
             }
         }
 
-        if (!inButton || activeSprite != buttonDown)
+        // If the button isn't being clicked, check mouseover state for highlighting
+        // TODO: Use a proper state variable
+        if (activeSprite != buttonDown)
         {
             activeSprite = (inButton ? buttonOver : buttonUp);
         }
@@ -88,12 +90,13 @@ public class Button
 
     public void render()
     {
+        final int width = (int) (Display.getWidth() * Display.getPixelScaleFactor()),
+                height = (int) (Display.getHeight() * Display.getPixelScaleFactor());
+
         glPushAttrib(GL_ALL_ATTRIB_BITS);
         glMatrixMode(GL_PROJECTION);
         glPushMatrix();
         glLoadIdentity();
-        int width = (int) (Display.getWidth() * Display.getPixelScaleFactor()),
-                height = (int) (Display.getHeight() * Display.getPixelScaleFactor());
         glViewport(0, 0, width, height);
         glOrtho(0, width, 0, height, -1, 1);
         glMatrixMode(GL_MODELVIEW);
@@ -101,13 +104,11 @@ public class Button
         glLoadIdentity();
         glEnable(GL_TEXTURE_2D);
         glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glTranslatef(0.01f, 0.01f, 0);
 
         activeSprite.setSize(sizeX, sizeY);
         activeSprite.render(position.x, position.y);
 
-        // Finalize drawing
         glDisable(GL_BLEND);
         glPopMatrix();
         glMatrixMode(GL_PROJECTION);

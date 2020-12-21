@@ -2,8 +2,6 @@ package org.lazywizard.testui;
 
 import com.fs.starfarer.api.BaseModPlugin;
 import com.fs.starfarer.api.Global;
-import com.fs.starfarer.api.campaign.listeners.ListenerManagerAPI;
-import org.json.Test;
 
 public class TestUIModPlugin extends BaseModPlugin
 {
